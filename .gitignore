@@ -1,0 +1,15 @@
+# Ignore the dataset folder (user data)
+meme_vs_not_meme_dataset/
+
+# Ignore temporary balanced dataset created by the notebook
+temp_balanced_dataset/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
