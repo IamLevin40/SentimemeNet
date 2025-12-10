@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentimemeNet | Deep Learning Meme Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css?v=3">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4A90E2',
+                        secondary: '#7ED321',
+                        danger: '#D0021B',
+                        warning: '#F5A623',
+                        success: '#7ED321',
+                        dark: '#1E293B'
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i data-feather="smile" class="text-primary w-8 h-8"></i>
+                    <h1 class="text-2xl font-bold text-gray-800">Senti<span class="text-primary">meme</span>Net</h1>
+                </div>
+                <nav class="hidden md:block">
+                    <ul class="flex space-x-6">
+                        <li><a href="#home" class="text-gray-600 hover:text-primary transition">Home</a></li>
+                        <li><a href="#about" class="text-gray-600 hover:text-primary transition">About</a></li>
+                        <li><a href="#models" class="text-gray-600 hover:text-primary transition">Models</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <section class="text-center mb-12" id="home">
+            <h2 class="text-4xl font-bold text-gray-800 mb-4">Deep Learning Meme Analysis</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto text-lg">
+                Advanced multimodal AI analyzes memes across 6 dimensions: detection, humor, motivation, offensiveness, sarcasm, and sentiment.
+            </p>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Upload Section -->
+            <section class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Upload Your Meme</h3>
+                
+                <!-- Drag and Drop Zone -->
+                <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition mb-4">
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="text-6xl text-gray-400 mb-2">📤</div>
+                        <p class="text-gray-500 mb-1">Drag & drop your meme image here</p>
+                        <p class="text-sm text-gray-400">or click to browse files</p>
+                        <p class="text-xs text-gray-400 mt-2">Supports JPG, PNG, GIF (max 10MB)</p>
+                    </div>
+                    <input type="file" id="fileInput" style="display: none;" accept="image/jpeg,image/png,image/jpg,image/gif">
+                </div>
+
+                <!-- Image Preview -->
+                <div id="imagePreview" class="hidden mb-4">
+                    <div class="relative">
+                        <img id="previewImage" src="" alt="Meme preview" class="w-full h-auto max-h-64 object-contain rounded-lg border border-gray-200">
+                        <button id="removeImage" class="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition">
+                            <span class="text-gray-600 text-xl">×</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text Input -->
+                <div class="mb-4">
+                    <label for="memeText" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        Meme Text (Optional)
+                        <span class="ml-2 text-xs text-gray-500 font-normal flex items-center">
+                            <i data-feather="info" class="w-3 h-3 mr-1"></i>
+                            Improves accuracy for sentiment models
+                        </span>
+                    </label>
+                    <div class="relative">
+                        <textarea id="memeText" rows="3" maxlength="500" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary resize-none" placeholder="Enter meme text or leave blank for OCR auto-extraction..."></textarea>
+                        <div class="absolute bottom-2 right-2 text-xs text-gray-500">
+                            <span id="charCount">0</span>/500
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <button id="sampleMeme" class="text-primary flex items-center text-sm hover:underline">
+                        <span class="mr-1">🖼️</span>
+                        Try Sample Meme
+                    </button>
+                    <button id="analyzeBtn" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <span id="analyzeBtnText">Analyze Meme</span>
+                        <i data-feather="chevron-right" class="w-4 h-4 ml-2"></i>
+                    </button>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="progressContainer" class="hidden mt-4">
+                    <div class="bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div id="progressBar" class="bg-primary h-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <p id="progressText" class="text-sm text-gray-600">Initializing analysis...</p>
+                        <p id="progressPercent" class="text-xs text-gray-500">0%</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="bg-white rounded-xl shadow-md p-6 hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Analysis Results</h3>
+                    <div class="flex space-x-2">
+                        <button id="exportBtn" class="text-gray-600 hover:text-primary transition flex items-center text-sm">
+                            <i data-feather="download" class="w-4 h-4 mr-1"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Primary Result -->
+                <div id="primaryResult" class="mb-6">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center">
+                                <div id="memeBadge" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                    <i data-feather="help-circle" class="text-gray-600 w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-800">Meme Detection</h4>
+                                    <p id="memeLabel" class="text-sm text-gray-500">Analyzing...</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p id="memeConfidence" class="text-sm font-semibold text-gray-700">--%</p>
+                            </div>
+                        </div>
+                        <div class="w-full">
+                            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="memeConfidenceBar" class="h-full bg-gray-400 transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Cards Grid -->
+                <div id="analysisCardsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Humor Card -->
+                    <div class="analysis-card" data-category="humour">
+                        <div class="card-icon bg-blue-100 text-blue-500">
+                            <i data-feather="smile" class="w-5 h-5"></i>
+                        </div>
+                        <div class="card-content">
+                            <h5>Humor</h5>
+                            <p class="status">Analyzing...</p>
+                            <div class="confidence-bar">
+                                <div class="progress bg-blue-500" style="width: 0%"></div>
+                            </div>
+                            <p class="confidence-text">--% confidence</p>
+                        </div>
+                    </div>
+
+                    <!-- Motivational Card -->
+                    <div class="analysis-card" data-category="motivational">
+                        <div class="card-icon bg-purple-100 text-purple-500">
+                            <i data-feather="award" class="w-5 h-5"></i>
+                        </div>
+                        <div class="card-content">
+                            <h5>Motivational</h5>
+                            <p class="status">Analyzing...</p>
+                            <div class="confidence-bar">
+                                <div class="progress bg-purple-500" style="width: 0%"></div>
+                            </div>
+                            <p class="confidence-text">--% confidence</p>
+                        </div>
+                    </div>
+
+                    <!-- Offensive Card -->
+                    <div class="analysis-card" data-category="offensive">
+                        <div class="card-icon bg-red-100 text-red-500">
+                            <i data-feather="alert-triangle" class="w-5 h-5"></i>
+                        </div>
+                        <div class="card-content">
+                            <h5>Offensive</h5>
+                            <p class="status">Analyzing...</p>
+                            <div class="confidence-bar">
+                                <div class="progress bg-red-500" style="width: 0%"></div>
+                            </div>
+                            <p class="confidence-text">--% confidence</p>
+                        </div>
+                    </div>
+
+                    <!-- Sarcasm Card -->
+                    <div class="analysis-card" data-category="sarcasm">
+                        <div class="card-icon bg-yellow-100 text-yellow-500">
+                            <i data-feather="zap" class="w-5 h-5"></i>
+                        </div>
+                        <div class="card-content">
+                            <h5>Sarcasm</h5>
+                            <p class="status">Analyzing...</p>
+                            <div class="confidence-bar">
+                                <div class="progress bg-yellow-500" style="width: 0%"></div>
+                            </div>
+                            <p class="confidence-text">--% confidence</p>
+                        </div>
+                    </div>
+
+                    <!-- Sentiment Card -->
+                    <div class="analysis-card" data-category="sentiment">
+                        <div class="card-icon bg-green-100 text-green-500">
+                            <i data-feather="heart" class="w-5 h-5"></i>
+                        </div>
+                        <div class="card-content">
+                            <h5>Sentiment</h5>
+                            <p class="status">Analyzing...</p>
+                            <div class="confidence-bar">
+                                <div class="progress bg-green-500" style="width: 0%"></div>
+                            </div>
+                            <p class="confidence-text">--% confidence</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Non-Meme Message (Hidden by default) -->
+                <div id="nonMemeMessage" class="hidden text-center py-12">
+                    <div class="text-6xl mb-4">🚫</div>
+                    <h3 class="text-2xl font-bold text-gray-700 mb-2">Certified Non-Meme Material</h3>
+                    <p class="text-gray-500">This image was not detected as a meme. Upload a meme to start analysis!</p>
+                </div>
+
+                <!-- Processing Time -->
+                <div class="mt-6 text-sm text-gray-500 text-center flex items-center justify-center">
+                    <i data-feather="clock" class="w-4 h-4 mr-1"></i>
+                    <span id="processingTime">Processing time: --</span>
+                </div>
+            </section>
+
+            <!-- Empty State for Results -->
+            <section id="emptyResults" class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center justify-center min-h-[400px]">
+                <div class="text-center max-w-md">
+                    <i data-feather="image" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">No Analysis Yet</h3>
+                    <p class="text-gray-500 mb-4">Upload a meme image to see comprehensive analysis across 6 dimensions: detection, humor, motivation, offensiveness, sarcasm, and sentiment.</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Model Information Section -->
+        <section id="models" class="mt-16 mb-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Model Performance</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Meme Detection -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h4 class="font-semibold text-lg mb-2 text-gray-800">Meme Detection</h4>
+                    <p class="text-sm text-gray-600 mb-3">Mini-ResNet CNN architecture</p>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Accuracy:</span>
+                            <span class="font-semibold text-green-600">92.53%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">F1-Score:</span>
+                            <span class="font-semibold">92.32%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Humor -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h4 class="font-semibold text-lg mb-2 text-gray-800">Humor Classification</h4>
+                    <p class="text-sm text-gray-600 mb-3">Multimodal (CNN + LSTM)</p>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Accuracy:</span>
+                            <span class="font-semibold">52.20%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">F1-Score:</span>
+                            <span class="font-semibold">49.52%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Motivational -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h4 class="font-semibold text-lg mb-2 text-gray-800">Motivational</h4>
+                    <p class="text-sm text-gray-600 mb-3">Multimodal (CNN + LSTM)</p>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Accuracy:</span>
+                            <span class="font-semibold">61.55%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">F1-Score:</span>
+                            <span class="font-semibold">66.22%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Offensive -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h4 class="font-semibold text-lg mb-2 text-gray-800">Offensive Detection</h4>
+                    <p class="text-sm text-gray-600 mb-3">Multimodal (CNN + LSTM)</p>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Accuracy:</span>
+                            <span class="font-semibold">58.58%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">F1-Score:</span>
+                            <span class="font-semibold">62.37%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sarcasm -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h4 class="font-semibold text-lg mb-2 text-gray-800">Sarcasm Detection</h4>
+                    <p class="text-sm text-gray-600 mb-3">Multimodal (CNN + LSTM)</p>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Accuracy:</span>
+                            <span class="font-semibold">55.85%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">F1-Score:</span>
+                            <span class="font-semibold">53.13%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sentiment -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h4 class="font-semibold text-lg mb-2 text-gray-800">Sentiment Analysis</h4>
+                    <p class="text-sm text-gray-600 mb-3">Multimodal (CNN + LSTM)</p>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Accuracy:</span>
+                            <span class="font-semibold">58.10%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">F1-Score:</span>
+                            <span class="font-semibold">59.75%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">SentimemeNet</h4>
+                    <p class="text-gray-400 text-sm">
+                        Advanced deep learning for comprehensive meme analysis using multimodal CNN and LSTM architectures.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">About</h4>
+                    <p class="text-gray-400 text-sm" id="about">
+                        This project uses 6 specialized models combining ResNet-based CNN for image processing and Bidirectional LSTM for text analysis.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Technology</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li>• TensorFlow & Keras</li>
+                        <li>• ResNet CNN + Bi-LSTM</li>
+                        <li>• OCR Text Extraction</li>
+                        <li>• 224×224 Image Processing</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400 text-sm">
+                <p>© 2025 SentimemeNet. CCS 248 Final Project.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js?v=3"></script>
+</body>
+</html>
